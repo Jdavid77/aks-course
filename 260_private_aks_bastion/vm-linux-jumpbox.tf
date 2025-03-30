@@ -1,33 +1,30 @@
 resource "azurerm_network_interface" "nic-vm" {
   name                 = "nic-vm"
-  resource_group_name  = azurerm_resource_group.rg.name
-  location             = azurerm_resource_group.rg.location
+  resource_group_name  = data.azurerm_resource_group.rg.name
+  location             = data.azurerm_resource_group.rg.location
 
   ip_configuration {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.snet-vm.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = null
+    public_ip_address_id          = azurerm_public_ip.vm-ip.id
   }
 }
 
 resource "azurerm_linux_virtual_machine" "vm-linux" {
   name                            = "vm-linux-jumpbox"
-  resource_group_name             = azurerm_resource_group.rg.name
-  location                        = azurerm_resource_group.rg.location
-  size                            = "Standard_B2ats_v2"
+  resource_group_name             = data.azurerm_resource_group.rg.name
+  location                        = data.azurerm_resource_group.rg.location
+  size                            = "Standard_B1s"
   disable_password_authentication = false
   admin_username                  = "azureuser"
   admin_password                  = "@Aa123456789"
   network_interface_ids           = [azurerm_network_interface.nic-vm.id]
-  priority                        = "Spot"
-  eviction_policy                 = "Deallocate"
 
   custom_data = filebase64("./install-tools.sh")
 
   identity {
-    type         = "UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.identity-vm.id]
+    type         = "SystemAssigned"
   }
 
   os_disk {
