@@ -1,7 +1,7 @@
 resource "azurerm_kubernetes_cluster" "aks" {
   name                = "aks-cluster"
-  location            = azurerm_resource_group.rg-spoke.location
-  resource_group_name = azurerm_resource_group.rg-spoke.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
   dns_prefix          = "aks"
   kubernetes_version  = "1.29.2"
 
@@ -22,10 +22,9 @@ resource "azurerm_kubernetes_cluster" "aks" {
   default_node_pool {
     name                  = "systemnp"
     node_count            = 2
-    vm_size               = "Standard_B2als_v2"
+    vm_size               = "Standard_D2s_v3"
     os_sku                = "AzureLinux"
     vnet_subnet_id        = azurerm_subnet.snet-spoke-aks.id
-    enable_node_public_ip = false
   }
 
   identity {

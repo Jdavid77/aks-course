@@ -1,16 +1,15 @@
 resource azurerm_public_ip "pip-vm-hub" {
   name                = "pip-vm-hub"
-  resource_group_name = azurerm_resource_group.rg-hub.name
-  location            = azurerm_resource_group.rg-hub.location
+  resource_group_name = data.azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
   allocation_method   = "Static"
   sku                 = "Standard"
 }
 
 resource "azurerm_network_interface" "nic-vm-hub" {
   name                 = "nic-vm-hub"
-  resource_group_name  = azurerm_resource_group.rg-hub.name
-  location             = azurerm_resource_group.rg-hub.location
-  enable_ip_forwarding = false
+  resource_group_name  = data.azurerm_resource_group.rg.name
+  location             = data.azurerm_resource_group.rg.location
 
   ip_configuration {
     name                          = "internal"
@@ -22,21 +21,18 @@ resource "azurerm_network_interface" "nic-vm-hub" {
 
 resource "azurerm_linux_virtual_machine" "vm-hub" {
   name                            = "vm-linux-hub"
-  resource_group_name             = azurerm_resource_group.rg-hub.name
-  location                        = azurerm_resource_group.rg-hub.location
-  size                            = "Standard_B2ats_v2"
+  resource_group_name             = data.azurerm_resource_group.rg.name
+  location                        = data.azurerm_resource_group.rg.location
+  size                            = "Standard_B2s"
   disable_password_authentication = false
   admin_username                  = "azureuser"
   admin_password                  = "@Aa123456789"
   network_interface_ids           = [azurerm_network_interface.nic-vm-hub.id]
-  priority                        = "Spot"
-  eviction_policy                 = "Deallocate"
 
   custom_data = filebase64("./install-tools.sh")
 
   identity {
-    type = "UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.identity-vm-hub.id]
+    type = "SystemAssigned"
   }
 
   os_disk {
@@ -57,28 +53,17 @@ resource "azurerm_linux_virtual_machine" "vm-hub" {
   }
 }
 
-resource "azurerm_user_assigned_identity" "identity-vm-hub" {
-  name                = "identity-vm-hub"
-  resource_group_name = azurerm_resource_group.rg-hub.name
-  location            = azurerm_resource_group.rg-hub.location
-}
-
-resource "azurerm_role_assignment" "contributor" {
-  scope                = data.azurerm_subscription.current.id
-  role_definition_name = "Contributor"
-  principal_id         = azurerm_user_assigned_identity.identity-vm-hub.principal_id
-}
 
 data "azurerm_subscription" "current" {}
 
 resource "azurerm_network_security_group" "nsg" {
   name                = "nsg-vm-hub"
-  location            = azurerm_resource_group.rg-hub.location
-  resource_group_name = azurerm_resource_group.rg-hub.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
 }
 
 resource "azurerm_network_security_rule" "allow-ssh" {
-  resource_group_name          = azurerm_resource_group.rg-hub.name
+  resource_group_name          = data.azurerm_resource_group.rg.name
   network_security_group_name  = azurerm_network_security_group.nsg.name
   name                         = "allow-ssh"
   access                       = "Allow"
