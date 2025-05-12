@@ -9,8 +9,9 @@ resource "azurerm_kubernetes_cluster" "aks" {
   workload_identity_enabled = true
 
   network_profile {
-    network_plugin = "azure"
-    outbound_type = "loadBalancer"
+    network_plugin      = "azure"
+    network_plugin_mode = "overlay"
+    outbound_type       = "loadBalancer"
   }
 
   default_node_pool {
